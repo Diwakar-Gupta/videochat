@@ -57,6 +57,7 @@ function onOffer(offer, name) {
           type: "answer", 
           answer: answer 
        }); 
+       otherUsernameInput.value = connectedUser;
        
     }, function (error) { 
        alert("oops...error"); 
@@ -102,6 +103,8 @@ function onLogin(success) {
    if (success === false) { 
       alert("oops...try a different username"); 
    } else {
+      otherUsernameInput.disabled=false;
+      connectToOtherUsernameBtn.disabled=false;
       //creating our RTCPeerConnection object 
 		
       var configuration = { 
