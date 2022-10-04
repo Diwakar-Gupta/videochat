@@ -47,7 +47,7 @@ wss.on('connection', function(connection) {
 
             case "offer":
                 //for ex. UserA wants to call UserB 
-                console.log("Sending offer to: ", data.name);
+                console.log(`Sending offer from: ${connection.name} to: ${data.name}`);
                 
                 //if UserB exists then send him offer details 
                 var conn = users[data.name]; 
@@ -65,7 +65,7 @@ wss.on('connection', function(connection) {
             break;
             
             case "answer": 
-                console.log("Sending answer to: ", data.name); 
+                console.log(`Sending answer from: ${connection.name} to: ${data.name}`); 
                     
                 //for ex. UserB answers UserA 
                 var conn = users[data.name]; 

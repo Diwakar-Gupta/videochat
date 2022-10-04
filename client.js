@@ -5,7 +5,10 @@ var loginInput = document.querySelector('#loginInput');
 var loginBtn = document.querySelector('#loginBtn'); 
 var otherUsernameInput = document.querySelector('#otherUsernameInput'); 
 var connectToOtherUsernameBtn = document.querySelector('#connectToOtherUsernameBtn'); 
-var connectedUser, myConnection;
+var msgInput = document.querySelector('#msgInput'); 
+var sendMsgBtn = document.querySelector('#sendMsgBtn');
+
+var connectedUser, myConnection, dataChannel;
   
 //when a user clicks the login button 
 loginBtn.addEventListener("click", function(event){ 
@@ -35,12 +38,12 @@ connectToOtherUsernameBtn.addEventListener("click", function () {
              offer: offer 
           });
              
-          myConnection.setLocalDescription(offer); 
+          myConnection.setLocalDescription(offer);
        }, function (error) { 
           alert("An error has occurred."); 
        }); 
     } 
- }); 
+}); 
 
 //when somebody wants to call us 
 function onOffer(offer, name) { 
@@ -54,16 +57,16 @@ function onOffer(offer, name) {
           type: "answer", 
           answer: answer 
        }); 
-         
+       
     }, function (error) { 
        alert("oops...error"); 
     }); 
  }
 
  //when another user answers to our offer 
-function onAnswer(answer) { 
+function onAnswer(answer) {
     myConnection.setRemoteDescription(new RTCSessionDescription(answer)); 
- }
+}
 
  //when we got ice candidate from another user 
 function onCandidate(candidate) { 
@@ -87,7 +90,7 @@ connection.onmessage = function (message) {
          break; 
       case "candidate": 
          onCandidate(data.candidate); 
-         break; 
+         break;
       default: 
          break; 
    } 
@@ -98,14 +101,16 @@ function onLogin(success) {
 
    if (success === false) { 
       alert("oops...try a different username"); 
-   } else { 
+   } else {
       //creating our RTCPeerConnection object 
 		
       var configuration = { 
          "iceServers": [{ "url": "stun:stun.1.google.com:19302" }] 
       }; 
 		
-      myConnection = new webkitRTCPeerConnection(configuration); 
+      myConnection = new RTCPeerConnection(configuration, { 
+        optional: [{RtpDataChannels: true}] 
+      });   
       console.log("RTCPeerConnection object was created"); 
       console.log(myConnection); 
   
@@ -119,10 +124,49 @@ function onLogin(success) {
                candidate: event.candidate 
             }); 
          } 
-      }; 
+      };
+
+      initDataChannel();
    } 
 };
-  
+
+//creating data channel 
+function initDataChannel() { 
+   var dataChannelOptions = { 
+      reliable:true 
+   }; 
+   
+   dataChannel = myConnection.createDataChannel("myDataChannel", dataChannelOptions);   
+   
+   myConnection.ondatachannel = function (event) {
+      dataChannel = event.channel;
+   };
+
+   dataChannel.onopen = function (open) { 
+      console.log("DataChannel open:", open);
+      msgInput.disabled = false;
+      sendMsgBtn.disabled = false;
+   };  
+   dataChannel.onmessage = function (event) { 
+      console.log("DataChannel Message:", event.data); 
+   };
+   dataChannel.onerror = function (error) { 
+      console.log("DataChannel Error:", error); 
+   };
+   dataChannel.onclose = function (close) { 
+      console.log("DataChannel Close:", close); 
+      msgInput.disabled = true;
+      sendMsgBtn.disabled = true;
+   };
+ }
+   
+ //when a user clicks the send message button 
+ sendMsgBtn.addEventListener("click", function (event) { 
+    console.log("send message");
+    var val = msgInput.value; 
+    dataChannel.send(val); 
+ });
+
 connection.onopen = function () { 
    console.log("Connected"); 
 };
