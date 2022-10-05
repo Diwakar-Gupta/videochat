@@ -100,9 +100,9 @@ function addTracksFromStream(currStream){
         let sender = yourConn.addTrack(track);
         remoteSenders[track.kind] = sender;
 
-        for (const track of stream.getTracks()) {
-            if(track.kind === ev.track.kind){
-                stream.removeTrack(track);
+        for (const trackStream of stream.getTracks()) {
+            if(track.kind === trackStream.kind){
+                stream.removeTrack(trackStream);
                 break;
             }
         }
@@ -141,59 +141,63 @@ function handleLogin(success) {
     } else { 
        loginPage.style.display = "none"; 
        callPage.style.display = "block";
-           
-       //********************** 
-       //Starting a peer connection 
-       //********************** 
-         
-       //setting local stream object
-       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia
-       || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-          
-       //using Google public stun server 
-       var configuration = { 
-          "iceServers": [{ "url": "stun:stun2.1.google.com:19302" }] 
-       }; 
-          
-       yourConn = new webkitRTCPeerConnection(configuration);
-          
-       //when a remote user adds stream to the peer connection, we display it 
 
-       yourConn.ontrack = (ev) => {
-         if (ev.streams && ev.streams[0]) {
-             remoteVideo.srcObject = ev.streams[0];
-         } else {
-             if (!remoteStream) {
-                 remoteStream = new MediaStream();
-                 remoteVideo.srcObject = remoteStream;
-             }
-             for (const track of remoteStream.getTracks()) {
-                 if(track.kind == ev.track.kind){
-                     remoteStream.removeTrack(track);
-                     break;
-                 }
-             }
-             remoteStream.addTrack(ev.track);
-           }
-       };
-       yourConn.onnegotiationneeded = e => yourConn.createOffer()
-             .then(offer => yourConn.setLocalDescription(offer))
-             .then(() => send({type:'offer', offer:yourConn.localDescription}))
-             .catch(console.log);
-          
-       // Setup ice handling 
-       yourConn.onicecandidate = function (event) {
-          
-          if (event.candidate) { 
-             send({ 
-                type: "candidate", 
-                candidate: event.candidate 
-             }); 
-          } 
-              
-       };
+       resetConnection();
     } 
  };
+
+ function resetConnection(){
+    //********************** 
+    //Starting a peer connection 
+    //********************** 
+        
+    //setting local stream object
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia
+    || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        
+    //using Google public stun server 
+    var configuration = { 
+        "iceServers": [{ "url": "stun:stun2.1.google.com:19302" }] 
+    }; 
+        
+    yourConn = new RTCPeerConnection(configuration);
+        
+    //when a remote user adds stream to the peer connection, we display it 
+
+    yourConn.ontrack = (ev) => {
+        if (ev.streams && ev.streams[0]) {
+            remoteVideo.srcObject = ev.streams[0];
+        } else {
+            if (!remoteStream) {
+                remoteStream = new MediaStream();
+                remoteVideo.srcObject = remoteStream;
+            }
+            for (const track of remoteStream.getTracks()) {
+                if(track.kind == ev.track.kind){
+                    remoteStream.removeTrack(track);
+                    break;
+                }
+            }
+            remoteStream.addTrack(ev.track);
+        }
+    };
+    yourConn.onnegotiationneeded = e => yourConn.createOffer()
+            .then(offer => yourConn.setLocalDescription(offer))
+            .then(() => send({type:'offer', offer:yourConn.localDescription}))
+            .catch(console.log);
+        
+    // Setup ice handling 
+    yourConn.onicecandidate = function (event) {
+        
+        if (event.candidate) { 
+            send({ 
+            type: "candidate", 
+            candidate: event.candidate 
+            }); 
+        } 
+            
+    };
+ }
 
 var localVideo = document.querySelector('#localVideo'); 
 var remoteVideo = document.querySelector('#remoteVideo');
@@ -269,8 +273,20 @@ hangUpBtn.addEventListener("click", function () {
  function handleLeave() { 
     connectedUser = null; 
     remoteVideo.src = null; 
-     
+    remoteSenders = {};
+    micBtn.checked = false;
+    videoBtn.checked = false;
+    connectionstats.textContent = 'Not connected';
+    
+    if(stream){
+        for(const track of stream.getTracks()){
+            track.stop();
+        }
+    }
+
     yourConn.close(); 
     yourConn.onicecandidate = null; 
     yourConn.onaddstream = null; 
+    yourConn.ontrack = null;
+    resetConnection();
  };
