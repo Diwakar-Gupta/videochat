@@ -47,18 +47,18 @@ connectToOtherUsernameBtn.addEventListener("click", function () {
 
 //when somebody wants to call us 
 function onOffer(offer, name) { 
-    connectedUser = name;
-    myConnection.setRemoteDescription(new RTCSessionDescription(offer)); 
-     
-    myConnection.createAnswer(function (answer) { 
-       myConnection.setLocalDescription(answer); 
-         
-       send({ 
-          type: "answer", 
-          answer: answer 
-       }); 
-       otherUsernameInput.value = connectedUser;
-       
+   connectedUser = name;
+   myConnection.setRemoteDescription(new RTCSessionDescription(offer)); 
+   
+   myConnection.createAnswer(function (answer) { 
+      myConnection.setLocalDescription(answer); 
+      
+      send({ 
+         type: "answer", 
+         answer: answer 
+      }); 
+      otherUsernameInput.value = connectedUser;
+      
     }, function (error) { 
        alert("oops...error"); 
     }); 
@@ -66,7 +66,7 @@ function onOffer(offer, name) {
 
  //when another user answers to our offer 
 function onAnswer(answer) {
-    myConnection.setRemoteDescription(new RTCSessionDescription(answer)); 
+   myConnection.setRemoteDescription(new RTCSessionDescription(answer)); 
 }
 
  //when we got ice candidate from another user 
@@ -89,8 +89,11 @@ connection.onmessage = function (message) {
       case "answer": 
          onAnswer(data.answer); 
          break; 
-      case "candidate": 
+         case "candidate": 
          onCandidate(data.candidate); 
+         break;
+      case "leave": 
+         onLeave(); 
          break;
       default: 
          break; 
@@ -133,8 +136,14 @@ function onLogin(success) {
    } 
 };
 
+function onLeave() {
+   msgInput.disabled = true;
+   sendMsgBtn.disabled = true;
+}
+
 //creating data channel 
 function initDataChannel() { 
+   console.log('initDataChannel')
    var dataChannelOptions = { 
       reliable:true 
    }; 
