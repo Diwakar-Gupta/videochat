@@ -1,8 +1,10 @@
 //require our websocket library 
 var WebSocketServer = require('ws').Server; 
 
-//creating a websocket server at port 9090 
-var wss = new WebSocketServer({port: 9090}); 
+//creating a websocket server 
+const PORT = process.env.PORT || 9090;
+console.log(`Starting on post:${PORT}`);
+var wss = new WebSocketServer({port: PORT}); 
  
 var users = {}
 //when a user connects to our sever 
